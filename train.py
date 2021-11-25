@@ -145,11 +145,29 @@ def train(opt):
     iteration = start_iter
 
     # initialize the early_stopping object
-    patience = int(20 / opt.valInterval) # Use 20 epochs, but since early_stopping is called only every valInterval, divide by valInterval.
-    print(f"Early stopping patience set to {patience}")
-    early_stopping = EarlyStopping(patience=patience, verbose=True)
+    early_stopping = EarlyStopping(patience=5, verbose=True)
+    
+    n_train_samples = len(train_dataset.data_loader_list[0].dataset)
+    print(f"Number of training samples: {n_train_samples}")
+    iter_per_epoch = n_train_samples / opt.batch_size
+    n_epochs = opt.num_iter / iter_per_epoch
+    print(f"Number of epochs: {n_epochs}, iter per epoch: {iter_per_epoch}")
+    epoch = 0
     
     while(True):
+    
+        # Check early stopping at each epoch.
+        if iteration % iter_per_epoch == 0:
+            epoch += 1
+            print(f"Current iter: {iteration}, epoch: {epoch} of {n_epochs}")
+          
+            # early_stopping needs the validation loss to check if it has decresed, 
+            # and if it has, it will make a checkpoint of the current model
+            early_stopping(valid_loss, model)
+                if early_stopping.early_stop:
+                    print("Early stopping")
+                    sys.exit()
+          
         # train part
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.to(device)
@@ -221,13 +239,6 @@ def train(opt):
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
                 log.write(predicted_result_log + '\n')
-
-            # early_stopping needs the validation loss to check if it has decresed, 
-            # and if it has, it will make a checkpoint of the current model
-            early_stopping(valid_loss, model)
-            if early_stopping.early_stop:
-                print("Early stopping")
-                sys.exit()
             
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
