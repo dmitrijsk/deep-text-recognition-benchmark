@@ -16,6 +16,8 @@ from utils import CTCLabelConverter, CTCLabelConverterForBaiduWarpctc, AttnLabel
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from test import validation
+from pytorchtools import EarlyStopping
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -142,6 +144,11 @@ def train(opt):
     best_norm_ED = -1
     iteration = start_iter
 
+    # initialize the early_stopping object
+    patience = int(20 / opt.valInterval) # Use 20 epochs, but since early_stopping is called only every valInterval, divide by valInterval.
+    print(f"Early stopping patience set to {patience}")
+    early_stopping = EarlyStopping(patience=patience, verbose=True)
+    
     while(True):
         # train part
         image_tensors, labels = train_dataset.get_batch()
@@ -215,6 +222,13 @@ def train(opt):
                 print(predicted_result_log)
                 log.write(predicted_result_log + '\n')
 
+            # early_stopping needs the validation loss to check if it has decresed, 
+            # and if it has, it will make a checkpoint of the current model
+            early_stopping(valid_loss, model)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                sys.exit()
+            
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
             torch.save(
