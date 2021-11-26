@@ -156,18 +156,6 @@ def train(opt):
     
     while(True):
     
-        # Check early stopping at each epoch.
-        if iteration % iter_per_epoch == 0:
-            epoch += 1
-            print(f"Current iter: {iteration}, epoch: {epoch} of {n_epochs}")
-          
-            # early_stopping needs the validation loss to check if it has decresed, 
-            # and if it has, it will make a checkpoint of the current model
-            early_stopping(valid_loss, model)
-                if early_stopping.early_stop:
-                    print("Early stopping")
-                    sys.exit()
-          
         # train part
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.to(device)
@@ -245,6 +233,18 @@ def train(opt):
             torch.save(
                 model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
 
+        # Check early stopping at each epoch.
+        if iteration % iter_per_epoch == 0:
+            epoch += 1
+            print(f"Current iter: {iteration}, epoch: {epoch} of {n_epochs}")
+          
+            # early_stopping needs the validation loss to check if it has decresed, 
+            # and if it has, it will make a checkpoint of the current model
+            early_stopping(valid_loss, model)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                sys.exit()
+          
         if (iteration + 1) == opt.num_iter:
             print('end the training')
             sys.exit()
