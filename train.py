@@ -16,6 +16,8 @@ from utils import CTCLabelConverter, CTCLabelConverterForBaiduWarpctc, AttnLabel
 from dataset import hierarchical_dataset, AlignCollate, Batch_Balanced_Dataset
 from model import Model
 from test import validation
+from pytorchtools import EarlyStopping
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -38,6 +40,9 @@ def train(opt):
         shuffle=True,  # 'True' to check training progress with validation function.
         num_workers=int(opt.workers),
         collate_fn=AlignCollate_valid, pin_memory=True)
+    
+    # For Win10 replace: num_workers=0
+    
     log.write(valid_dataset_log)
     print('-' * 80)
     log.write('-' * 80 + '\n')
@@ -82,6 +87,9 @@ def train(opt):
         print(f'loading pretrained model from {opt.saved_model}')
         if opt.FT:
             model.load_state_dict(torch.load(opt.saved_model), strict=False)
+            
+            # For Win10 add: map_location=torch.device('cpu'))
+            
         else:
             model.load_state_dict(torch.load(opt.saved_model))
     print("Model:")
@@ -142,7 +150,35 @@ def train(opt):
     best_norm_ED = -1
     iteration = start_iter
 
+    # initialize the early_stopping object
+    early_stopping = EarlyStopping(patience=5, verbose=True, path=f'./saved_models/{opt.exp_name}/checkpoint-seed{opt.manualSeed}.pth')
+    
+    n_train_samples = len(train_dataset.data_loader_list[0].dataset)
+    p1 = f"Number of training samples: {n_train_samples}"
+    iter_per_epoch = n_train_samples // opt.batch_size
+    n_epochs = opt.num_iter // iter_per_epoch
+    p2 = f"Number of epochs: {n_epochs}, iter per epoch: {iter_per_epoch}"
+    epoch = 0
+
+    opt.valInterval = iter_per_epoch
+    valid_log_fname = f'./saved_models/{opt.exp_name}/log_early.txt'
+    early_stopping.log(p1 + "\n" + p2 + "\n", valid_log_fname)
+    
+    
+    # def get_n(root):
+    #     import lmdb
+    #     lmdb_env = lmdb.open(root, readonly=True)
+    #     with lmdb_env.begin(write=False) as txn:
+    #         nSamples = int(txn.get('num-samples'.encode()))
+    #     return nSamples
+    # n_train_samples2 = get_n(opt.train_data)
+    # print(f"Number of training samples from LMDB: {n_train_samples2}")
+
+
+
+
     while(True):
+    
         # train part
         image_tensors, labels = train_dataset.get_batch()
         image = image_tensors.to(device)
@@ -183,7 +219,8 @@ def train(opt):
                 model.train()
 
                 # training loss and validation loss
-                loss_log = f'[{iteration+1}/{opt.num_iter}] Train loss: {loss_avg.val():0.5f}, Valid loss: {valid_loss:0.5f}, Elapsed_time: {elapsed_time:0.5f}'
+                train_loss = loss_avg.val()
+                loss_log = f'[{iteration+1}/{opt.num_iter}] Train loss: {train_loss:0.5f}, Valid loss: {valid_loss:0.5f}, Elapsed_time: {elapsed_time:0.5f}'
                 loss_avg.reset()
 
                 current_model_log = f'{"Current_accuracy":17s}: {current_accuracy:0.3f}, {"Current_norm_ED":17s}: {current_norm_ED:0.2f}'
@@ -214,7 +251,21 @@ def train(opt):
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
                 log.write(predicted_result_log + '\n')
-
+            
+            # Check early stopping at each epoch.
+            if (iteration + 1) % iter_per_epoch == 0 or iteration == 0:
+                epoch += 1
+                valid_log = f"Iter: [{iteration+1}/{opt.num_iter}]. Epoch: [{epoch}/{n_epochs}]. Training loss: {train_loss}."
+              
+                # early_stopping needs the validation loss to check if it has decresed, 
+                # and if it has, it will make a checkpoint of the current model
+                early_stopping(valid_loss, model, valid_log, valid_log_fname)
+                if early_stopping.early_stop:
+                    print("Early stopping")
+                    early_stopping.log("Early stopping", valid_log_fname)
+                    sys.exit()
+                
+              
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
             torch.save(
