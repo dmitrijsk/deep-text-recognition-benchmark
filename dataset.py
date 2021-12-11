@@ -63,7 +63,7 @@ class Batch_Balanced_Dataset(object):
             _data_loader = torch.utils.data.DataLoader(
                 _dataset, batch_size=_batch_size,
                 shuffle=True,
-                num_workers=int(opt.workers),
+                num_workers=0,
                 collate_fn=_AlignCollate, pin_memory=True)
             self.data_loader_list.append(_data_loader)
             self.dataloader_iter_list.append(iter(_data_loader))
@@ -121,7 +121,7 @@ def hierarchical_dataset(root, opt, select_data='/'):
                 dataset_log += f'{sub_dataset_log}\n'
                 dataset_list.append(dataset)
 
-                with open(f"./saved_models/{opt.exp_name}/log_filtered_index_list.txt", "a", encoding="utf-8") as f:
+                with open(f"./result/{opt.exp_name}/log_filtered_index_list.txt", "a", encoding="utf-8") as f:
                     for e in dataset.filtered_index_list:
                         f.write(f"{e}\n")
 
