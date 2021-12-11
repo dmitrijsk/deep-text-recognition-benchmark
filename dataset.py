@@ -121,6 +121,10 @@ def hierarchical_dataset(root, opt, select_data='/'):
                 dataset_log += f'{sub_dataset_log}\n'
                 dataset_list.append(dataset)
 
+                with open(f"./result/{opt.exp_name}/log_filtered_index_list.txt", "a", encoding="utf-8") as f:
+                    for e in dataset.filtered_index_list:
+                        f.write(f"{e}\n")
+
     concatenated_dataset = ConcatDataset(dataset_list)
 
     return concatenated_dataset, dataset_log
