@@ -86,8 +86,11 @@ def validation(model, criterion, evaluation_loader, converter, opt):
     infer_time = 0
     valid_loss_avg = Averager()
 
-    log_predictions = open(f'./result/{opt.exp_name}/log_predictions.txt', 'a')
-    log_predictions.write(f'batch,target,prediction,match,cum_match\n')
+    # Export predictions only when testing. This function is also be called by train.py.
+    # Directory `/result/{opt.exp_name}` is created only during testing.
+    if hasattr(opt, 'eval_data'):
+        log_predictions = open(f'./result/{opt.exp_name}/log_predictions.txt', 'a')
+        log_predictions.write(f'batch,target,prediction,match,cum_match\n')
 
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
         batch_size = image_tensors.size(0)
@@ -159,7 +162,9 @@ def validation(model, criterion, evaluation_loader, converter, opt):
             if pred == gt:
                 n_correct += 1
 
-            log_predictions.write(f'{i},{gt},{pred},{int(pred == gt)},{n_correct}\n')
+            # Export predictions only when testing. This function is also be called by train.py.
+            if hasattr(opt, 'eval_data'):
+                log_predictions.write(f'{i},{gt},{pred},{int(pred == gt)},{n_correct}\n')
 
             '''
             (old version) ICDAR2017 DOST Normalized Edit Distance https://rrc.cvc.uab.es/?ch=7&com=tasks
@@ -189,7 +194,9 @@ def validation(model, criterion, evaluation_loader, converter, opt):
     accuracy = n_correct / float(length_of_data) * 100
     norm_ED = norm_ED / float(length_of_data)  # ICDAR2019 Normalized Edit Distance
 
-    log_predictions.close()
+    # Export predictions only when testing. This function is also be called by train.py.
+    if hasattr(opt, 'eval_data'):
+        log_predictions.close()
 
     return valid_loss_avg.val(), accuracy, norm_ED, preds_str, confidence_score_list, labels, infer_time, length_of_data
 
