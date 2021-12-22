@@ -86,10 +86,13 @@ def validation(model, criterion, evaluation_loader, converter, opt):
     infer_time = 0
     valid_loss_avg = Averager()
 
-    # Export predictions only when testing. This function is also be called by train.py.
-    # Directory `/result/{opt.exp_name}` is created only during testing.
+    # Export predictions only when testing
+    # because dir `/result/{opt.exp_name}` is created only during testing,
+    # but this function is also be called by train.py.
+    # Log file with predictions contains the dir of test data.
     if hasattr(opt, 'eval_data'):
-        log_predictions = open(f'./result/{opt.exp_name}/log_predictions.txt', 'a')
+        eval_dir = opt.eval_data.split("/")[-1]
+        log_predictions = open(f'./result/{opt.exp_name}/log_predictions_{eval_dir}.txt', 'a')
         log_predictions.write(f'batch,target,prediction,match,cum_match\n')
 
     for i, (image_tensors, labels) in enumerate(evaluation_loader):
