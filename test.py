@@ -195,7 +195,7 @@ def validation(model, criterion, evaluation_loader, converter, opt):
             # print(pred, gt, pred==gt, confidence_score)
 
     accuracy = n_correct / float(length_of_data) * 100
-    norm_ED = norm_ED / float(length_of_data)  # ICDAR2019 Normalized Edit Distance
+    norm_ED = norm_ED / float(length_of_data)  # ICDAR2019 Normalized Edit Distance https://arxiv.org/pdf/1909.07741.pdf
 
     # Export predictions only when testing. This function is also be called by train.py.
     if hasattr(opt, 'eval_data'):
@@ -250,11 +250,14 @@ def test(opt):
                 shuffle=False,
                 num_workers=int(opt.workers),
                 collate_fn=AlignCollate_evaluation, pin_memory=True)
-            _, accuracy_by_best_model, _, _, _, _, _, _ = validation(
+            _, accuracy_by_best_model, norm_ED, _, _, _, _, _ = validation(
                 model, criterion, evaluation_loader, converter, opt)
             log.write(eval_data_log)
-            print(f'{accuracy_by_best_model:0.3f}')
-            log.write(f'{accuracy_by_best_model:0.3f}\n')
+            print(f'Accuracy: {accuracy_by_best_model:0.8f}')
+            print(f'Norm ED: {norm_ED:0.8f}')
+            
+            log.write(f'Accuracy: {accuracy_by_best_model:0.8f}\n')
+            log.write(f'Norm ED: {norm_ED:0.8f}\n')
             log.close()
 
 
