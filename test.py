@@ -184,7 +184,7 @@ def validation(model, criterion, evaluation_loader, converter, opt):
             elif len(gt) > len(pred):
                 norm_ED += 1 - edit_distance(pred, gt) / len(gt)
             else:
-                norm_ED += 1 - edit_distance(pred, gt) / len(pred)
+                norm_ED += 1 - edit_distance(pred, gt) / len(gt) # Changed to gt from pred.
 
             # calculate confidence score (= multiply of pred_max_prob)
             try:
