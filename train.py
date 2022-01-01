@@ -151,7 +151,7 @@ def train(opt):
     iteration = start_iter
 
     # initialize the early_stopping object
-    early_stopping = EarlyStopping(patience=5, verbose=True, path=f'./saved_models/{opt.exp_name}/checkpoint-seed{opt.manualSeed}.pth')
+    early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=f'./saved_models/{opt.exp_name}/checkpoint-seed{opt.manualSeed}.pth')
     
     n_train_samples = len(train_dataset.data_loader_list[0].dataset)
     p1 = f"Number of training samples: {n_train_samples}"
@@ -254,7 +254,7 @@ def train(opt):
             
             # Check early stopping at each epoch.
             if (iteration + 1) % iter_per_epoch == 0 or iteration == 0:
-                epoch += 1
+                
                 valid_log = f"Iter: [{iteration+1}/{opt.num_iter}]. Epoch: [{epoch}/{n_epochs}]. Training loss: {train_loss}."
               
                 # early_stopping needs the validation loss to check if it has decresed, 
@@ -264,6 +264,8 @@ def train(opt):
                     print("Early stopping")
                     early_stopping.log("Early stopping", valid_log_fname)
                     sys.exit()
+                
+                epoch += 1
                 
               
         # save model per 1e+5 iter.
@@ -324,6 +326,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--patience', type=int, default=5, help='patience for the early stopping')
 
     opt = parser.parse_args()
 
