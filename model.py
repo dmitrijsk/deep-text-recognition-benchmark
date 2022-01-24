@@ -71,6 +71,25 @@ class Model(nn.Module):
         """ Transformation stage """
         if not self.stages['Trans'] == "None":
             input = self.Transformation(input)
+        #    input2 = self.Transformation(input)
+
+        #
+        # Uncomment this code to export a batch of images before/after TPS.
+        #
+        import matplotlib.pyplot as plt
+        import numpy as np
+        #
+        # xs = np.ones((1, 203))
+        # for i in range(192):
+        #     x = np.column_stack((input.squeeze()[i, :, :], np.ones((32,3)), input2.squeeze()[i, :, :]))
+        #     xs = np.row_stack((xs, np.ones((3,203)), x))
+        #
+        # plt.figure(figsize=(3, 40))
+        # plt.imshow((xs + 1) / 2 * 256, cmap='gray', vmin=0, vmax=255)
+        # plt.axis('off')
+        # plt.savefig(fname="tps/all.jpeg", dpi=800)
+
+
 
         """ Feature extraction stage """
         visual_feature = self.FeatureExtraction(input)
