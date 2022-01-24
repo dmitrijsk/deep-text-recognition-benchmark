@@ -1,4 +1,5 @@
-# Source: https://github.com/Bjarten/early-stopping-pytorch
+# Adapted from source: https://github.com/Bjarten/early-stopping-pytorch
+# License: https://github.com/Bjarten/early-stopping-pytorch/blob/master/LICENSE
 
 import numpy as np
 import torch
