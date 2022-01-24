@@ -150,9 +150,12 @@ def train(opt):
     best_norm_ED = -1
     iteration = start_iter
 
-    # initialize the early_stopping object
+    # ----------------------------------------------------------------------------------------
+    
+    # Initialize the early_stopping object
     early_stopping = EarlyStopping(patience=opt.patience, verbose=True, path=f'./saved_models/{opt.exp_name}/checkpoint-seed{opt.manualSeed}.pth')
     
+    # Debug information.
     n_train_samples = len(train_dataset.data_loader_list[0].dataset)
     p1 = f"Number of training samples: {n_train_samples}"
     iter_per_epoch = n_train_samples // opt.batch_size
@@ -160,22 +163,14 @@ def train(opt):
     p2 = f"Number of epochs: {n_epochs}, iter per epoch: {iter_per_epoch}"
     epoch = 0
 
+    # Overwrite opt.valInterval with the number of iterations per epoch.
     opt.valInterval = iter_per_epoch
+    
+    # Start logging early stopping information.
     valid_log_fname = f'./saved_models/{opt.exp_name}/log_early.txt'
     early_stopping.log(p1 + "\n" + p2 + "\n", valid_log_fname)
     
-    
-    # def get_n(root):
-    #     import lmdb
-    #     lmdb_env = lmdb.open(root, readonly=True)
-    #     with lmdb_env.begin(write=False) as txn:
-    #         nSamples = int(txn.get('num-samples'.encode()))
-    #     return nSamples
-    # n_train_samples2 = get_n(opt.train_data)
-    # print(f"Number of training samples from LMDB: {n_train_samples2}")
-
-
-
+    # ----------------------------------------------------------------------------------------
 
     while(True):
     
